@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/catalog_provider.dart';
+import '../../providers/product_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../widgets/product_card.dart';
 import 'cart_screen.dart';
@@ -35,6 +35,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         title: const Text('Product Catalog'),
         actions: [
           Stack(
+            alignment: Alignment.center,
             children: [
               IconButton(
                 icon: const Icon(Icons.shopping_cart),
@@ -71,7 +72,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 ),
             ],
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
         ],
       ),
       body: Row(
@@ -120,9 +121,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             ),
                           ),
                           onChanged: (value) {
-                            ref
-                                .read(searchQueryProvider.notifier)
-                                .state = value;
+                            ref.read(searchQueryProvider.notifier).state = value;
                           },
                         ),
                       ),
@@ -146,21 +145,19 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       children: [
                         'All',
                         'Electronics',
-                        'Clothing',
-                        'Home',
-                        'Books'
+                        'Accessories',
+                        'Lifestyle',
                       ].map((category) {
                         final isSelected = selectedCategory == category ||
-                            (category == 'All' && selectedCategory == null);
+                            (category == 'All' && (selectedCategory == null || selectedCategory == 'All'));
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4.0),
                           child: ChoiceChip(
                             label: Text(category),
                             selected: isSelected,
                             onSelected: (selected) {
-                              ref
-                                  .read(selectedCategoryProvider.notifier)
-                                  .state = category == 'All' ? null : category;
+                              ref.read(selectedCategoryProvider.notifier).state =
+                                  category == 'All' ? 'All' : category;
                             },
                           ),
                         );
@@ -179,7 +176,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         padding: const EdgeInsets.all(16.0),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: isDesktop ? 4 : 2,
-                          childAspectRatio: 0.75,
+                          childAspectRatio: 0.72,
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
                         ),
@@ -206,19 +203,22 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   Widget _buildCategoryList(String? selectedCategory) {
-    final categories = ['All', 'Electronics', 'Clothing', 'Home', 'Books'];
+    final categories = ['All', 'Electronics', 'Accessories', 'Lifestyle'];
     return ListView(
       children: categories.map((category) {
         final isSelected = selectedCategory == category ||
-            (category == 'All' && selectedCategory == null);
-        return ListTile(
-          title: Text(category),
-          selected: isSelected,
-          selectedTileColor: Colors.blue.withValues(alpha: 0.1),
-          onTap: () {
-            ref.read(selectedCategoryProvider.notifier).state =
-                category == 'All' ? null : category;
-          },
+            (category == 'All' && (selectedCategory == null || selectedCategory == 'All'));
+        return Material(
+          color: Colors.transparent,
+          child: ListTile(
+            title: Text(category),
+            selected: isSelected,
+            selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
+            onTap: () {
+              ref.read(selectedCategoryProvider.notifier).state =
+                  category == 'All' ? 'All' : category;
+            },
+          ),
         );
       }).toList(),
     );

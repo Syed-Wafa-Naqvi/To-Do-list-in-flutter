@@ -7,7 +7,8 @@ class CartDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cartAsync = ref.watch(cartProvider);
+    final cartItems = ref.watch(cartProvider);
+    final totalAmount = ref.watch(cartTotalProvider);
 
     return Drawer(
       child: SafeArea(
@@ -47,10 +48,8 @@ class CartDrawer extends ConsumerWidget {
               ),
             ),
             Expanded(
-              child: cartAsync.when(
-                data: (cart) {
-                  if (cart.items.isEmpty) {
-                    return const Center(
+              child: cartItems.isEmpty
+                  ? const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -63,123 +62,119 @@ class CartDrawer extends ConsumerWidget {
                           ),
                         ],
                       ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    itemCount: cart.items.length,
-                    itemBuilder: (context, index) {
-                      final item = cart.items[index];
-                      return ListTile(
-                        leading: item.imageUrl.isNotEmpty
-                            ? Image.network(
-                                item.imageUrl,
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.image_not_supported),
-                              )
-                            : const Icon(Icons.image),
-                        title: Text(
-                          item.productName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          '\$${item.price.toStringAsFixed(2)} x ${item.quantity}',
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove_circle_outline),
-                              onPressed: () {
-                                ref
-                                    .read(cartProvider.notifier)
-                                    .updateQuantity(item.productId, item.quantity - 1);
-                              },
+                    )
+                  : ListView.builder(
+                      itemCount: cartItems.length,
+                      itemBuilder: (context, index) {
+                        final item = cartItems[index];
+                        return Material(
+                          color: Colors.transparent,
+                          child: ListTile(
+                            leading: item.imageUrl.isNotEmpty
+                                ? Image.network(
+                                    item.imageUrl,
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        const Icon(Icons.image_not_supported),
+                                  )
+                                : const Icon(Icons.image),
+                            title: Text(
+                              item.productName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            Text('${item.quantity}'),
-                            IconButton(
-                              icon: const Icon(Icons.add_circle_outline),
-                              onPressed: () {
-                                ref
-                                    .read(cartProvider.notifier)
-                                    .updateQuantity(item.productId, item.quantity + 1);
-                              },
+                            subtitle: Text(
+                              '\$${item.price.toStringAsFixed(2)} x ${item.quantity}',
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Center(child: Text('Error: $err')),
-              ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                  onPressed: () {
+                                    ref
+                                        .read(cartProvider.notifier)
+                                        .updateQuantity(item.productId, item.quantity - 1);
+                                  },
+                                ),
+                                Text('${item.quantity}'),
+                                IconButton(
+                                  icon: const Icon(Icons.add_circle_outline),
+                                  onPressed: () {
+                                    ref
+                                        .read(cartProvider.notifier)
+                                        .updateQuantity(item.productId, item.quantity + 1);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
-            cartAsync.maybeWhen(
-              data: (cart) {
-                if (cart.items.isEmpty) return const SizedBox.shrink();
-                return Container(
-                  padding: const EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
+            if (cartItems.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Total:',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total:',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                          Text(
-                            '\$${cart.totalAmount.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
+                        Text(
+                          '\$${totalAmount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Checkout functionality coming soon!'),
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Checkout Success'),
+                              content: const Text('Thank you for your purchase!'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    ref.read(cartProvider.notifier).clearCart();
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('OK'),
+                                ),
+                              ],
                             ),
                           );
                         },
-                        child: const Text(
-                          'Checkout',
-                          style: TextStyle(fontSize: 16),
-                        ),
+                        child: const Text('Checkout'),
                       ),
-                    ],
-                  ),
-                );
-              },
-              orElse: () => const SizedBox.shrink(),
-            ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

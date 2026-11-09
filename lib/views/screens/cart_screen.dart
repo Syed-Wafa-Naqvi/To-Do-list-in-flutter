@@ -1,15 +1,16 @@
-import 'package:flutter/material.live.dart';
-import 'package:flutter_riverpod/flutter_riverpod.live.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/cart_item_model.dart';
 import '../../providers/cart_provider.dart';
-import 'checkout_screen.dart';
 
 class CartScreen extends ConsumerWidget {
-  const CartScreen({Key? key}) : super(key: key);
+  const CartScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cartState = ref.watch(cartProvider);
+    final cartItems = ref.watch(cartProvider);
     final cartNotifier = ref.read(cartProvider.notifier);
+    final totalAmount = ref.watch(cartTotalProvider);
 
     final isDesktop = MediaQuery.of(context).size.width >= 768;
 
@@ -17,8 +18,18 @@ class CartScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Shopping Cart'),
         elevation: 0,
+        actions: [
+          if (cartItems.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
+              tooltip: 'Clear Cart',
+              onPressed: () {
+                cartNotifier.clearCart();
+              },
+            ),
+        ],
       ),
-      body: cartState.items.isEmpty
+      body: cartItems.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -54,14 +65,14 @@ class CartScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       flex: 2,
-                      chno: _buildCartList(cartState.items, cartNotifier),
+                      child: _buildCartList(cartItems, cartNotifier),
                     ),
                     const VerticalDivider(width: 1),
                     Expanded(
                       flex: 1,
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
-                        child: _buildOrderSummary(context, cartState.totalAmount),
+                        child: _buildOrderSummary(context, ref, totalAmount),
                       ),
                     ),
                   ],
@@ -69,15 +80,15 @@ class CartScreen extends ConsumerWidget {
               : Column(
                   children: [
                     Expanded(
-                      child: _buildCartList(cartState.items, cartNotifier),
+                      child: _buildCartList(cartItems, cartNotifier),
                     ),
-                    _buildOrderSummary(context, cartState.totalAmount),
+                    _buildOrderSummary(context, ref, totalAmount),
                   ],
                 ),
     );
   }
 
-  Widget _buildCartList(List cartItems, CartNotifier cartNotifier) {
+  Widget _buildCartList(List<CartItem> cartItems, CartNotifier cartNotifier) {
     return ListView.builder(
       itemCount: cartItems.length,
       padding: const EdgeInsets.all(16),
@@ -95,18 +106,25 @@ class CartScreen extends ConsumerWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    item.imageUrl,
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      width: 80,
-                      height: 80,
-                      color: Colors.grey.shade200,
-                      child: const Icon(Icons.image_not_supported),
-                    ),
-                  ),
+                  child: item.imageUrl.isNotEmpty
+                      ? Image.network(
+                          item.imageUrl,
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 80,
+                            height: 80,
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.image_not_supported),
+                          ),
+                        )
+                      : Container(
+                          width: 80,
+                          height: 80,
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.image_not_supported),
+                        ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -182,14 +200,14 @@ class CartScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildOrderSummary(BuildContext context, double totalAmount) {
+  Widget _buildOrderSummary(BuildContext context, WidgetRef ref, double totalAmount) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -246,10 +264,23 @@ class CartScreen extends ConsumerWidget {
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CheckoutScreen(),
+              showDialog(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Checkout Success'),
+                  content: Text(
+                    'Your order of \$${totalAmount.toStringAsFixed(2)} has been placed successfully!',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        ref.read(cartProvider.notifier).clearCart();
+                        Navigator.pop(dialogContext);
+                        Navigator.pop(context);
+                      },
+                      child: const Text('OK'),
+                    ),
+                  ],
                 ),
               );
             },

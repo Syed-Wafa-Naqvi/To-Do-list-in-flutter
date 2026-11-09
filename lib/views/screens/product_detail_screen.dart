@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/product_model.dart';
 import '../../providers/cart_provider.dart';
+import 'cart_screen.dart';
 
 class ProductDetailScreen extends ConsumerWidget {
-  final ProductModel product;
+  final Product product;
 
   const ProductDetailScreen({super.key, required this.product});
 
@@ -12,17 +13,51 @@ class ProductDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 800;
+    final cartItemCount = ref.watch(cartItemCountProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(product.name),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () {
-              Navigator.pushNamed(context, '/cart');
-            },
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CartScreen()),
+                  );
+                },
+              ),
+              if (cartItemCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '$cartItemCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SingleChildScrollView(
@@ -123,7 +158,8 @@ class ProductDetailScreen extends ConsumerWidget {
           height: 50,
           child: ElevatedButton.icon(
             onPressed: () {
-              ref.read(cartProvider.notifier).addItem(product);
+              ref.read(cartProvider.notifier).addToCart(product);
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('${product.name} added to cart!'),
@@ -131,7 +167,10 @@ class ProductDetailScreen extends ConsumerWidget {
                   action: SnackBarAction(
                     label: 'View Cart',
                     onPressed: () {
-                      Navigator.pushNamed(context, '/cart');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const CartScreen()),
+                      );
                     },
                   ),
                 ),

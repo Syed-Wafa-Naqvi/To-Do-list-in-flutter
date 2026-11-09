@@ -1,5 +1,5 @@
 @echo off
-echo Starting Flutter Project: Flutter Snake Game...
+echo Starting Flutter Project: Product Listing App...
 where flutter >nul 2>nul
 if %errorlevel% neq 0 (
     if exist "%USERPROFILE%\flutter\bin\flutter.bat" set "PATH=%USERPROFILE%\flutter\bin;%PATH%"

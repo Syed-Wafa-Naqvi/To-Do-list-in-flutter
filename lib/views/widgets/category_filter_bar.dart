@@ -1,16 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../viewmodels/product_viewmodel.dart';
+import '../../providers/product_provider.dart';
 
 class CategoryFilterBar extends ConsumerWidget {
-  const CategoryFilterBar({super.key});
+  final bool isVertical;
+
+  const CategoryFilterBar({super.key, this.isVertical = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedCategory = ref.watch(selectedCategoryProvider);
-    
-    // Standard categories matching typical e-commerce needs
-    final categories = ['All', 'Electronics', 'Footwear', 'Apparel', 'Accessories', 'Home'];
+    final categoriesAsync = ref.watch(categoriesProvider);
+
+    return categoriesAsync.when(
+      data: (categories) => _buildList(context, ref, categories, selectedCategory),
+      loading: () => _buildList(
+        context,
+        ref,
+        const ['All', 'Electronics', 'Accessories', 'Lifestyle'],
+        selectedCategory,
+      ),
+      error: (_, __) => _buildList(
+        context,
+        ref,
+        const ['All', 'Electronics', 'Accessories', 'Lifestyle'],
+        selectedCategory,
+      ),
+    );
+  }
+
+  Widget _buildList(
+    BuildContext context,
+    WidgetRef ref,
+    List<String> categories,
+    String? selectedCategory,
+  ) {
+    if (isVertical) {
+      return ListView.builder(
+        itemCount: categories.length,
+        itemBuilder: (context, index) {
+          final category = categories[index];
+          final isSelected = selectedCategory == category ||
+              (category == 'All' && (selectedCategory == null || selectedCategory == 'All'));
+
+          return Material(
+            color: Colors.transparent,
+            child: ListTile(
+              title: Text(category),
+              selected: isSelected,
+              selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              onTap: () {
+                ref.read(selectedCategoryProvider.notifier).state =
+                    category == 'All' ? 'All' : category;
+              },
+            ),
+          );
+        },
+      );
+    }
 
     return Container(
       height: 50,
@@ -21,7 +71,8 @@ class CategoryFilterBar extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         itemBuilder: (context, index) {
           final category = categories[index];
-          final isSelected = selectedCategory == category || (category == 'All' && selectedCategory == null);
+          final isSelected = selectedCategory == category ||
+              (category == 'All' && (selectedCategory == null || selectedCategory == 'All'));
 
           return Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -30,21 +81,10 @@ class CategoryFilterBar extends ConsumerWidget {
               selected: isSelected,
               onSelected: (selected) {
                 if (selected) {
-                  ref.read(selectedCategoryProvider.notifier).state = 
-                      category == 'All' ? null : category;
+                  ref.read(selectedCategoryProvider.notifier).state =
+                      category == 'All' ? 'All' : category;
                 }
               },
-              selectedColor: Theme.of(context).colorScheme.primary,
-              labelStyle: TextStyle(
-                color: isSelected 
-                    ? Theme.of(context).colorScheme.onPrimary 
-                    : Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.dpSafe ?? 20.0),
-              ),
             ),
           );
         },
@@ -53,6 +93,4 @@ class CategoryFilterBar extends ConsumerWidget {
   }
 }
 
-extension on num {
-  double? get dpSafe => toDouble();
-}
+typedef CategoryFilter = CategoryFilterBar;

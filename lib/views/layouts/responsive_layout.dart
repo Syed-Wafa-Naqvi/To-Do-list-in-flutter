@@ -10,7 +10,7 @@ class ResponsiveLayout extends StatelessWidget {
     required this.desktopBody,
   });
 
-  static const int mobileBreakpoint = 600;
+  static const int mobileBreakpoint = 800;
 
   @override
   Widget build(BuildContext context) {

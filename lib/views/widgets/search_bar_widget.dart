@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../viewmodels/product_viewmodel.dart';
+import '../../providers/product_provider.dart';
 
 class SearchBarWidget extends ConsumerStatefulWidget {
   const SearchBarWidget({super.key});
@@ -28,7 +28,6 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Keep controller in sync if state changes externally
     ref.listen<String>(searchQueryProvider, (previous, next) {
       if (_controller.text != next) {
         _controller.text = next;

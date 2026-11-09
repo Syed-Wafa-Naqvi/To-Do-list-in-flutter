@@ -14,15 +14,14 @@ class MobileLayout extends ConsumerStatefulWidget {
 class _MobileLayoutState extends ConsumerState<MobileLayout> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const CatalogScreen(),
-    const CartScreen(),
+  final List<Widget> _screens = const [
+    CatalogScreen(),
+    CartScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final cartItems = ref.watch(cartProvider);
-    final totalItemCount = cartItems.fold<int>(0, (sum, item) => sum + item.quantity);
+    final totalItemCount = ref.watch(cartItemCountProvider);
 
     return Scaffold(
       body: IndexedStack(
